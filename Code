@@ -1,0 +1,46 @@
+import requests
+from bs4 import BeautifulSoup
+import re
+
+def get_https_url_from_user():
+  
+    url = input("Please enter an HTTPS URL: ")
+
+    if not url.startswith("https://"):
+        url = "https://" + url
+
+    return url
+
+def scrape_email_addresses(url):
+    try:
+      
+        response = requests.get(url)
+        response.raise_for_status()
+
+        soup = BeautifulSoup(response.text, 'html.parser')
+
+        
+        email_pattern = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}\b'
+        email_addresses = re.findall(email_pattern, soup.text)
+
+        unique_email_addresses = list(set(email_addresses))
+
+        return unique_email_addresses
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return []
+
+def main():
+    url = get_https_url_from_user()
+
+    if url:
+        email_addresses = scrape_email_addresses(url)
+        if email_addresses:
+            print("\nEmail addresses found:\n")
+            for email in email_addresses:
+                print("\t"+email+"\n")
+        else:
+            print("No email addresses found on the webpage.")
+
+if __name__ == "__main__":
+    main()
