@@ -2,45 +2,56 @@ import requests
 from bs4 import BeautifulSoup
 import re
 
-def get_https_url_from_user():
-  
-    url = input("Please enter an HTTPS URL: ")
-
-    if not url.startswith("https://"):
-        url = "https://" + url
-
-    return url
+# Function to extract URLs from a given text
+def extract_urls_from_text(text):
+    url_pattern = r'https?://\S+|www\.\S+'
+    return re.findall(url_pattern, text)
 
 def scrape_email_addresses(url):
     try:
-      
         response = requests.get(url)
         response.raise_for_status()
 
         soup = BeautifulSoup(response.text, 'html.parser')
 
-        
         email_pattern = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}\b'
         email_addresses = re.findall(email_pattern, soup.text)
 
-        unique_email_addresses = list(set(email_addresses))
+        # Use a set to store unique email addresses
+        unique_email_addresses = set(email_addresses)
 
         return unique_email_addresses
     except Exception as e:
         print(f"An error occurred: {e}")
-        return []
+        return set()
 
 def main():
-    url = get_https_url_from_user()
+    file_path = 'weblink.txt' # Replace with the file you want to read from
 
-    if url:
-        email_addresses = scrape_email_addresses(url)
-        if email_addresses:
-            print("\nEmail addresses found:\n")
-            for email in email_addresses:
-                print("\t"+email+"\n")
-        else:
-            print("No email addresses found on the webpage.")
+    unique_email_addresses = set()  # Set to store unique email addresses
+
+    try:
+        with open(file_path, 'r') as file:
+            text = file.read()
+            urls = extract_urls_from_text(text)
+
+            if urls:
+                for url in urls:
+                    print(f"Processing URL: {url}")
+                    email_addresses = scrape_email_addresses(url)
+
+                    # Update the set of unique email addresses
+                    unique_email_addresses.update(email_addresses)
+
+            if unique_email_addresses:
+                print("\nEmail addresses found:\n")
+                for email in unique_email_addresses:
+                    print("\t" + email+"\n")
+            else:
+                print("No unique email addresses found on the webpages.")
+
+    except FileNotFoundError:
+        print(f"File not found: {file_path}")
 
 if __name__ == "__main__":
     main()
