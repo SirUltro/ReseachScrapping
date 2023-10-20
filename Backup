@@ -1,1 +1,86 @@
+import requests
+from bs4 import BeautifulSoup
+import re
 
+# Function to extract URLs from a given text
+def extract_urls_from_text(text):
+    url_pattern = r'https?://\S+|www\.\S+'
+    return re.findall(url_pattern, text)
+
+def scrape_email_addresses(url):
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+
+        soup = BeautifulSoup(response.text, 'html.parser')
+
+        email_pattern = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}\b'
+        email_addresses = re.findall(email_pattern, soup.text)
+
+        # Use a set to store unique email addresses
+        unique_email_addresses = set(email_addresses)
+
+        return unique_email_addresses
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return set()
+
+def scrape_ip_addresses(url):
+  try:
+      response = requests.get(url)
+      response.raise_for_status()
+
+      # Using a regular expression to find IP addresses
+      ip_pattern = r'\b(?:\d{1,3}\.){3}\d{1,3}\b'
+      ip_addresses = re.findall(ip_pattern, response.text)
+
+      # Use a set to store unique IP addresses
+      unique_ip_addresses = set(ip_addresses)
+
+      return unique_ip_addresses
+  except Exception as e:
+      print(f"An error occurred: {e}")
+      return set()
+
+def main():
+    file_path = 'weblink.txt' # Replace with the file you want to read from
+
+    unique_email_addresses = set()  # Set to store unique email addresses
+    unique_ip_addresses = set()  # Set to store unique IP addresses
+
+    try:
+        with open(file_path, 'r') as file:
+            text = file.read()
+            urls = extract_urls_from_text(text)
+
+            if urls:
+                for url in urls:
+                  print(f"Processing URL: {url}")
+                  email_addresses = scrape_email_addresses(url)
+                  ip_addresses = scrape_ip_addresses(url)
+
+                  # Update the set of unique email addresses
+                  unique_email_addresses.update(email_addresses)
+                  unique_ip_addresses.update(ip_addresses)      
+
+            if unique_email_addresses:
+                print("\nEmail addresses found:\n")
+                for email in unique_email_addresses:
+                    print("\t" + email+"\n")
+
+            else:
+              print("No unique email addresses found on the webpages.")
+
+            if unique_ip_addresses:
+                print("\nIP addresses found:\n")
+                for ip in unique_ip_addresses:
+                    print("\t" + ip + "\n")
+                  
+            else:
+                print("No unique IP-addresses found on the webpages.")
+
+    except FileNotFoundError:
+        print(f"File not found: {file_path}")
+
+if __name__ == "__main__":
+    main()
